@@ -1,6 +1,6 @@
 module.exports = {
     build: {
-      src: ["typings/tsd.d.ts" ,'typescript/*.ts'],
+      src: ["typings/tsd.d.ts" ,'typescript/**/*.ts'],
       dest: 'build/',
       reference: "typings/tsd.d.ts",
       options: {

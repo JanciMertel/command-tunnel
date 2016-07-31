@@ -5,46 +5,58 @@
  * Could be extended or just embedded as variable
  * @since 0.0.1
  */
-class CommandTunnel {
+class AbstractTunnel {
 
+    protected name; // alised name - direct identification on current side of tunnel
     protected entity; // simplified: for owned its object with callable methods, for remote / local it is connection
-    protected registeredActions;  // aliased actions
+    protected registeredActions;  // aliased actions -- could be stored under custom name
     protected orderNumber : number; // keeping eyes on command numbers aka ids
-    protected entityConfig;  // custom config for entity reference
     protected callbackQueue;
     protected remoteCallbackQueue;
     protected notPreparedQueue;
     protected tunnelReady;
+    protected tunnel;
 
-    constructor(passedEntityConfig)
+    constructor(entityReference)
     {
-      this.entityConfig = passedEntityConfig;
       this.registeredActions = {};
       this.callbackQueue = {};
       this.remoteCallbackQueue = {};
       this.orderNumber = 0;
       this.tunnelReady = false;
       this.notPreparedQueue = [];
-      this.entity = passedEntityConfig.entityReference;
+      this.entity = entityReference;
+
       // create default actions
       this.registerAction('commandTunnel::tunnelReady', this.onTunnelReady); // should fire any preregistered commands
 
-        var that = this;
-        return new Proxy(this, {
-            get: function (rcvr, name) {
-
-                if (name === '__noSuchMethod__') {
-                    console.log('Command called through proxy, but method named  is not defined. Ignoring.');
-                } else {
-                    return function() {
-                        var args = Array.prototype.slice.call(arguments);
-                        return that.__noSuchMethod__(name, args);
-                    }
+      // wrap this side of the tunnel in Proxy so non existing calls could be transformed into commands
+      var that = this;
+      return new Proxy(this, {
+          get: function (rcvr, name) {
+              if (name === '__noSuchMethod__') {
+                  console.log('Command called through proxy, but method named  is not defined. Ignoring.');
+              } else {
+                if(typeof that[name] === 'function')
+                {
+                   return that[name]
                 }
-            }
-        })
+                else
+                {
+                  return function() {
+                    var args = Array.prototype.slice.call(arguments);
+                    return that.__noSuchMethod__(name, args);
+                  }
+                }
+             }
+          }
+      })
     }
 
+    test()
+    {
+      return 'abstract tunnel here'
+    }
     getNextOrderNumber()
     {
         return ++this.orderNumber
@@ -128,4 +140,4 @@ class CommandTunnel {
     }
 }
 
-export default CommandTunnel;
+export default AbstractTunnel;

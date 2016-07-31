@@ -1,18 +1,17 @@
 "use strict";
 
+import AbstractTunnel from './AbstractTunnel'
 /**
- * Owned Module
+ * Owned Tunnel
  * @since 0.0.1
  */
 
-//var CommandTunnel  = boot.assert('core/driver', 'CommandTunnel');
-import CommandTunnel from './CommandTunnel';
-
-class OwnedModule extends CommandTunnel
+class OwnedTunnel extends AbstractTunnel
 {
     constructor(passedConfig)
     {
         super(passedConfig);
+
         this.tunnelReady = true; // always
     }
 
@@ -57,13 +56,11 @@ class OwnedModule extends CommandTunnel
         }
         return resolve(returnValue);
     }
-    /**
-     * This method should not be called directly, insted use the original command method
-     */
+
     protected command(data)
     {
         return new Promise(this.processOwnedCommand.bind(this, data));
     }
 }
 
-export default OwnedModule;
+export default OwnedTunnel;

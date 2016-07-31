@@ -18,10 +18,8 @@ module.exports = function (grunt) {
     gtx.config(gruntConfig);
 
     var build = jsTasks;
-    console.log('WWWWWWWWWWWW');
-    gtx.alias('build', build);
 
-    console.log('WWWWWWWWWWWW');
+    gtx.alias('build', build);
 
     gtx.finalise();
 };
