@@ -20,7 +20,8 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/jmertel/commandtunnel#readme",
   "dependencies": {
-    "grunt-ts": "^5.1.0"
+    "grunt-ts": "^5.1.0",
+    "regenerator": "^0.8.41"
   },
   "devDependencies": {
     "babel-core": "^6.0.20",

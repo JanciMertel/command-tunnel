@@ -48,7 +48,7 @@ export function createInterface(a:Object) : any;
 
 //grunt-start
 /// <reference path="../typescript/CommandTunnelHelper.ts" />
-/// <reference path="../typescript/test/Test.ts" />
+/// <reference path="../typescript/test/test.ts" />
 /// <reference path="../typescript/tunnels/AbstractTunnel.ts" />
 /// <reference path="../typescript/tunnels/OwnedTunnel.ts" />
 //grunt-end
