@@ -23,7 +23,12 @@
     "grunt-ts": "^5.1.0"
   },
   "devDependencies": {
+    "babel-core": "^6.0.20",
+    "babel-polyfill": "^6.0.16",
+    "babel-preset-es2015": "^6.0.15",
+    "babel-preset-stage-0": "^6.0.15",
     "grunt": "^0.4.5",
+    "grunt-babel": "^6.0.0",
     "grunt-contrib-clean": "^0.6.0",
     "gruntfile-gtx": "^0.3.0",
     "require-directory": "^2.0.0"

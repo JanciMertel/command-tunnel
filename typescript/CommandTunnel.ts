@@ -7,13 +7,10 @@
  */
 class CommandTunnel {
 
-    protected name = 'CommandTunnel';
-    protected entity; // for owned
-    protected registeredActions;
-    protected orderNumber : number;
-    protected entityConfig;
-    protected child; // for local
-    protected connection; // for remote;
+    protected entity; // simplified: for owned its object with callable methods, for remote / local it is connection
+    protected registeredActions;  // aliased actions
+    protected orderNumber : number; // keeping eyes on command numbers aka ids
+    protected entityConfig;  // custom config for entity reference
     protected callbackQueue;
     protected remoteCallbackQueue;
     protected notPreparedQueue;
@@ -31,6 +28,21 @@ class CommandTunnel {
       this.entity = passedEntityConfig.entityReference;
       // create default actions
       this.registerAction('commandTunnel::tunnelReady', this.onTunnelReady); // should fire any preregistered commands
+
+        var that = this;
+        return new Proxy(this, {
+            get: function (rcvr, name) {
+
+                if (name === '__noSuchMethod__') {
+                    console.log('Command called through proxy, but method named  is not defined. Ignoring.');
+                } else {
+                    return function() {
+                        var args = Array.prototype.slice.call(arguments);
+                        return that.__noSuchMethod__(name, args);
+                    }
+                }
+            }
+        })
     }
 
     getNextOrderNumber()
@@ -43,11 +55,7 @@ class CommandTunnel {
      */
     __noSuchMethod__(name,args)
     {
-      if(typeof args[0] !== 'object' || typeof args[0].length === 'undefined')
-      {
-        args = [args];
-      }
-      return this.command({ name : name, arguments : args});
+        console.log('no such method')
     }
 
     getEntity()

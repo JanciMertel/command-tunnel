@@ -25,6 +25,10 @@ var CommandTunnel = (function () {
         this.entity = passedEntityConfig.entityReference;
         // create default actions
         this.registerAction('commandTunnel::tunnelReady', this.onTunnelReady); // should fire any preregistered commands
+        return Proxy.create({
+            get: function (rcvr, name) {
+            }
+        });
     }
     CommandTunnel.prototype.getNextOrderNumber = function () {
         return ++this.orderNumber;

@@ -11,6 +11,7 @@ module.exports = function (grunt) {
     ];
     var jsTasks = [
         'ts:build',
+        'babel:dist'
     ];
 
 
