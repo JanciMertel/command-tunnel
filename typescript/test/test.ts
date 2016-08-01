@@ -9,14 +9,18 @@ require('babel-polyfill')
 
 import CommandTunnelHelper from '../CommandTunnelHelper';
 
-async function test()
+var helper = new CommandTunnelHelper()
+
+
+async function testAbstract()
 {
-  // helper test
-  var helper = new CommandTunnelHelper()
   let AbstractTunnelClass = helper.getTunnel('AbstractTunnel')
   let abstractTunnelInstance = new AbstractTunnelClass();
   abstractTunnelInstance.test()
+}
 
+async function testOwned()
+{
   // owned tunnel test
   let dummyModule = {
     test : function()
@@ -26,7 +30,7 @@ async function test()
   }
 
   let OwnedModuleClass = helper.getTunnel('OwnedTunnel')
-  let ownedTunnelInstance = new OwnedModuleClass(dummyModule, {});
+  let ownedTunnelInstance = new OwnedModuleClass({entityReference:dummyModule});
   try
   {
     await ownedTunnelInstance.test();
@@ -37,4 +41,10 @@ async function test()
   }
 }
 
-test();
+async function testLocal()
+{
+  let LocalModuleClass = helper.getTunnel('LocalTunnel')
+  let localTunnelInstance = new LocalModuleClass({path : '../test/localModule.js'});
+}
+
+testLocal();

@@ -11,9 +11,13 @@ import AbstractTunnel from './AbstractTunnel'
 
 class OwnedTunnel extends AbstractTunnel
 {
-    constructor(directObjectReference, tunnelConfig)
+    constructor(tunnelConfig)
     {
-        super(directObjectReference, tunnelConfig);
+        super(tunnelConfig);
+
+        // owned tunnel is using direct reference + todo add checking
+        this.entity = tunnelConfig.entityReference;
+
         this.tunnelReady = true; // always
     }
 
@@ -29,18 +33,19 @@ class OwnedTunnel extends AbstractTunnel
         // for any actions registered for this event
         if(this.registeredActions[data.name])
         {
-          this.registeredActions[data.name].iterator().toEnd(function(registeredActionCallback)
+          for(let i in this.registeredActions[data.name])
           {
-              returnValue = registeredActionCallback.call(that, data);
-          });
+              returnValue = this.registeredActions[data.name][i].call(that, data);
+          }
         }
         else
         {
             var pipes = data.name.split('.');
             var pipesOk = true;
             returnValue = this.entity; // replacement for actual object
-            pipes.iterator().toEnd(function(item, index)
+            for(let index in pipes)
             {
+                let item = pipes[index];
                 if(!pipesOk) return false;
                 if(typeof returnValue[item] === 'function')
                 {
@@ -50,7 +55,7 @@ class OwnedTunnel extends AbstractTunnel
                 {
                     pipesOk = false;
                 }
-            });
+            }
 
             if(!pipesOk)
             {

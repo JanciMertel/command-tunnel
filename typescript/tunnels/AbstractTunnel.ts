@@ -15,7 +15,7 @@ class AbstractTunnel {
 
     protected name; // alised name - direct identification on current side of tunnel
     protected entity; // simplified: for owned its object with callable methods, for remote / local it is connection
-    protected tunnelConfig : Object;
+    protected tunnelConfig : any;
     protected registeredActions;  // aliased actions -- could be stored under custom name
     protected orderNumber : number; // keeping eyes on command numbers aka ids
     protected callbackQueue;
@@ -24,7 +24,7 @@ class AbstractTunnel {
     protected tunnelReady;
     protected broadcaster : any = console.log;
 
-    constructor(entityReference, tunnelConfig)
+    constructor(tunnelConfig)
     {
       this.registeredActions = {};
       this.callbackQueue = {};
@@ -32,7 +32,6 @@ class AbstractTunnel {
       this.orderNumber = 0;
       this.tunnelReady = false;
       this.notPreparedQueue = [];
-      this.entity = entityReference;
       this.tunnelConfig = tunnelConfig;
 
       // create default actions
@@ -45,7 +44,7 @@ class AbstractTunnel {
               if (name === '__noSuchMethod__') {
                   console.log('Command called through proxy, but method named  is not defined. Ignoring.');
               } else {
-                if(typeof that[name] === 'function')
+                if(typeof that[name] !== 'undefined')
                 {
                    return that[name]
                 }
@@ -110,11 +109,12 @@ class AbstractTunnel {
         this.broadcaster('Tunnel is now ready');
         this.tunnelReady = true;
         var that = this;
-        this.notPreparedQueue.iterator().toEnd(function(item)
+        for(let i in this.notPreparedQueue)
         {
+            let item = this.notPreparedQueue[i];
             // item is array of arguments
             that.command.apply(that, item);
-        });
+        }
         this.notPreparedQueue = [];
 
     }
@@ -130,7 +130,25 @@ class AbstractTunnel {
         this.broadcaster(this.name + ' does not have extended method "command"!');
     }
 
-    /**
+    /*
+     * Just a checker method before the actual 'on' call - here should be places various checkings as
+     * the argument is just an object transferred through the tunnel.
+     */
+    protected onAbstractMessage(data)
+    {
+        // space for extending... right now it just checks whether the identification
+        // of event is present
+        if(data.name)
+        {
+            this.on(data);
+        }
+        else
+        {
+            cli.info(this.name + ' catched unknown command: ' + JSON.stringify(data));
+        }
+    }
+
+     /**
      * Entry point for received messages on this side of the tunnel
      * @param  {[type]} data [description]
      * @return {[type]}      [description]

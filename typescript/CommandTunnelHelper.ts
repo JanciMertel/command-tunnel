@@ -2,6 +2,7 @@
 
 import OwnedTunnel from './tunnels/OwnedTunnel';
 import AbstractTunnel from './tunnels/AbstractTunnel'
+import LocalTunnel from './tunnels/LocalTunnel'
 
 /**
  * Command tunnel for transparent approach to communication between nodes - remote or local
@@ -16,6 +17,7 @@ class CommandTunnelHelper {
     {
       this.registerTunnel('AbstractTunnel', AbstractTunnel);
       this.registerTunnel('OwnedTunnel', OwnedTunnel);
+      this.registerTunnel('LocalTunnel', LocalTunnel);
     }
 
     registerTunnel(newTunnelName, TunnelClass)
