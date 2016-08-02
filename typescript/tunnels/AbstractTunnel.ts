@@ -26,6 +26,7 @@ class AbstractTunnel {
 
     constructor(tunnelConfig)
     {
+      this.name = 'AbstractTunnel instance';
       this.registeredActions = {};
       this.callbackQueue = {};
       this.remoteCallbackQueue = {};
@@ -33,7 +34,9 @@ class AbstractTunnel {
       this.tunnelReady = false;
       this.notPreparedQueue = [];
       this.tunnelConfig = tunnelConfig;
-
+      // owned tunnel is using direct reference + todo add checking
+      this.entity = tunnelConfig.entityReference;
+      
       // create default actions
       this.registerAction('commandTunnel::tunnelReady', this.onTunnelReady); // should fire any preregistered commands
 

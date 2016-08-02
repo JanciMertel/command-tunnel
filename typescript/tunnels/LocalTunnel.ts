@@ -27,9 +27,6 @@ class LocalTunnel extends AbstractTunnel
         this.isForked = typeof process.send === 'function';
         if(!this.isForked)
         {
-          console.log('not forked')
-
-          console.log(this.tunnelConfig.path)
           this.child = cp.fork(this.tunnelConfig.path);
           this.child.on('message', this.onAbstractMessage.bind(this));
         }
@@ -122,7 +119,7 @@ class LocalTunnel extends AbstractTunnel
                 // ignore if callback does not exist
                 // shouldn't happen, but if does, then we cannot say for sure which
                 // resolve callback should be called - pairing failed...at least notify
-                this.broadcast('Cannot find command callback base on order number. Ignoring.');
+                this.broadcaster('Cannot find command callback base on order number. Ignoring.');
             }
             // return is not requireds
         }
@@ -151,7 +148,6 @@ class LocalTunnel extends AbstractTunnel
                     if(!pipesOk) return false;
                     if(typeof returnValue[item] === 'function')
                     {
-                        cli.info(item)
                         returnValue = returnValue[item].apply(returnValue, data.arguments[index]);
                     }
                     else

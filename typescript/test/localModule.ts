@@ -4,19 +4,25 @@ require('babel-polyfill')
 
 import LocalTunnel from '../tunnels/LocalTunnel';
 
-class Wat
-{
-  test()
+// owned tunnel test
+let dummyModule = {
+  test : async function()
   {
-    console.log('Neviem')
+    await new Promise(function(resolve)
+    {                          
+      setTimeout(function()
+      {
+        console.log('This method was called through LocalTunnel after 2000ms');
+        resolve();
+      }, 2000)
+    });
   }
 }
 
-var wat = new Wat()
+var localTunnelInstance = new LocalTunnel({ entityReference : dummyModule })
 
-var localTunnelInstance = new LocalTunnel({entityReference:wat})
-
-setInterval(function()
+setTimeout(function()
 {
-  console.log('Trying this shit')
-}, 1000)
+  console.log('Child process ending')
+  process.exit()
+}, 5000)

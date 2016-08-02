@@ -15,7 +15,7 @@ var helper = new CommandTunnelHelper()
 async function testAbstract()
 {
   let AbstractTunnelClass = helper.getTunnel('AbstractTunnel')
-  let abstractTunnelInstance = new AbstractTunnelClass();
+  let abstractTunnelInstance = new AbstractTunnelClass({});
   abstractTunnelInstance.test()
 }
 
@@ -23,9 +23,16 @@ async function testOwned()
 {
   // owned tunnel test
   let dummyModule = {
-    test : function()
+    test : async function()
     {
-      console.log('This method was called through OwnedModule')
+      await new Promise(function(resolve)
+      {                          
+        setTimeout(function()
+        {
+          console.log('This method was called through OwnedTunnel after 5000ms');
+          resolve();
+        }, 5000)
+      });
     }
   }
 
@@ -44,7 +51,32 @@ async function testOwned()
 async function testLocal()
 {
   let LocalModuleClass = helper.getTunnel('LocalTunnel')
-  let localTunnelInstance = new LocalModuleClass({path : '../test/localModule.js'});
+  let localTunnelInstance = new LocalModuleClass({path : './localModule.js'});
+  try
+  {
+    await localTunnelInstance.test();
+  }
+  catch(e)
+  {
+    console.log(e)
+  }
 }
 
-testLocal();
+async function testAll()
+{
+  console.log('#### Testing abstract tunnel ####');
+  console.log('(should print \'...does not have extended method "command"...\')')
+  await testAbstract();
+  
+  console.log('\r\n\r\n#### Testing owned tunnel ####');
+  console.log('(should print \'...This method was called through OwnedTunnel...\')')
+  await testOwned();
+  
+  console.log('\r\n\r\n#### Testing local tunnel ####');
+  console.log('(should print \'...Tunnel is now ready...\')')
+  console.log('(should print \'...This method was called through LocalTunnel...\')')
+  console.log('(should print \'...Child process ending...\')')
+  await testLocal();
+}
+
+testAll();

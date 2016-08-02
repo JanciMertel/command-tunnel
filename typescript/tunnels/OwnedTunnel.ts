@@ -15,9 +15,6 @@ class OwnedTunnel extends AbstractTunnel
     {
         super(tunnelConfig);
 
-        // owned tunnel is using direct reference + todo add checking
-        this.entity = tunnelConfig.entityReference;
-
         this.tunnelReady = true; // always
     }
 
@@ -27,7 +24,6 @@ class OwnedTunnel extends AbstractTunnel
      */
     private processOwnedCommand(data, resolve, reject)
     {
-        console.log(arguments)
         var returnValue;
         var that = this;
         // for any actions registered for this event
