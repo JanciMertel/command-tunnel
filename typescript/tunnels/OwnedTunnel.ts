@@ -41,6 +41,9 @@ class OwnedTunnel extends AbstractTunnel
             returnValue = this.entity; // replacement for actual object
             for(let index in pipes)
             {
+                // check for any prototype in array
+                if(!pipes.hasOwnProperty(index))
+                  continue;
                 let item = pipes[index];
                 if(!pipesOk) return false;
                 if(typeof returnValue[item] === 'function')
