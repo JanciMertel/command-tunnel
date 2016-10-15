@@ -8,7 +8,7 @@ require('babel-polyfill')
  */
 
 import CommandTunnelHelper from '../CommandTunnelHelper';
-
+import Tester from './Tester';
 var helper = new CommandTunnelHelper()
 
 
@@ -16,7 +16,11 @@ async function testAbstract()
 {
   let AbstractTunnelClass = helper.getTunnel('AbstractTunnel')
   let abstractTunnelInstance = new AbstractTunnelClass({});
-  abstractTunnelInstance.test()
+  abstractTunnelInstance.command = function()
+  {
+    return 'AbstractTunnel - overriden method';
+  }
+  return abstractTunnelInstance.test()
 }
 
 async function testOwned()
@@ -25,58 +29,43 @@ async function testOwned()
   let dummyModule = {
     test : async function()
     {
-      await new Promise(function(resolve)
-      {                          
+      return new Promise(function(resolve)
+      {
         setTimeout(function()
         {
-          console.log('This method was called through OwnedTunnel after 5000ms');
-          resolve();
-        }, 5000)
+          resolve('This method was called through OwnedTunnel after 2000ms');
+        }, 2000)
       });
     }
   }
 
   let OwnedModuleClass = helper.getTunnel('OwnedTunnel')
   let ownedTunnelInstance = new OwnedModuleClass({entityReference:dummyModule});
-  try
-  {
-    await ownedTunnelInstance.test();
-  }
-  catch(e)
-  {
-    console.log(e)
-  }
+  return await ownedTunnelInstance.test();
 }
 
 async function testLocal()
 {
   let LocalModuleClass = helper.getTunnel('LocalTunnel')
   let localTunnelInstance = new LocalModuleClass({path : './localModule.js'});
-  try
-  {
-    await localTunnelInstance.test();
-  }
-  catch(e)
-  {
-    console.log(e)
-  }
+  return await localTunnelInstance.testSync();
 }
 
 async function testAll()
 {
-  console.log('#### Testing abstract tunnel ####');
-  console.log('(should print \'...does not have extended method "command"...\')')
-  await testAbstract();
-  
-  console.log('\r\n\r\n#### Testing owned tunnel ####');
-  console.log('(should print \'...This method was called through OwnedTunnel...\')')
-  await testOwned();
-  
-  console.log('\r\n\r\n#### Testing local tunnel ####');
-  console.log('(should print \'...Tunnel is now ready...\')')
-  console.log('(should print \'...This method was called through LocalTunnel...\')')
-  console.log('(should print \'...Child process ending...\')')
-  await testLocal();
+  var tester = new Tester();
+  var res = null;
+
+  res = await tester.expects(testAbstract).isEqual('AbstractTunnel - overriden method')
+  tester.assertTest("testAbstract", res);
+
+  res = await tester.expects(testOwned).isEqual('This method was called through OwnedTunnel after 2000ms')
+  tester.assertTest("OwnedTest", res);
+
+  res = await tester.expects(testLocal).isEqual('This method was called through LocalTunnel after 2000ms')
+  tester.assertTest("testLocal", res);
+
+  tester.results();
 }
 
 testAll();

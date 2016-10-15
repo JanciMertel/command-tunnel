@@ -36,7 +36,7 @@ class AbstractTunnel {
       this.tunnelConfig = tunnelConfig;
       // owned tunnel is using direct reference + todo add checking
       this.entity = tunnelConfig.entityReference;
-      
+
       // create default actions
       this.registerAction('commandTunnel::tunnelReady', this.onTunnelReady); // should fire any preregistered commands
 
@@ -114,6 +114,8 @@ class AbstractTunnel {
         var that = this;
         for(let i in this.notPreparedQueue)
         {
+            if(!this.notPreparedQueue.hasOwnProperty(i))
+              continue;
             let item = this.notPreparedQueue[i];
             // item is array of arguments
             that.command.apply(that, item);
@@ -156,10 +158,10 @@ class AbstractTunnel {
      * @param  {[type]} data [description]
      * @return {[type]}      [description]
      */
-    protected on(data)
+    protected async on(data)
     {
         // extend this!!
-        this.broadcaster(this.name + ' does not have extended method "on"!');
+        return await this.broadcaster(this.name + ' does not have extended method "on"!');
     }
 
     /**

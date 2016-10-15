@@ -42,7 +42,7 @@ class LocalTunnel extends AbstractTunnel
     /**
      * This method should not be called directly, instead use the original-command method
      */
-    protected command(data)
+    protected command(data, preparedResolve?)
     {
         let promiseToReturn;
         let that = this;
@@ -54,6 +54,7 @@ class LocalTunnel extends AbstractTunnel
             {
                 that.notPreparedQueue.push([data, resolve]);
             });
+            promiseToReturn.iden = 'omg'
         }
         else
         {
@@ -69,10 +70,20 @@ class LocalTunnel extends AbstractTunnel
                 // between error and success... on this level we can't determine
                 // whether the result should be translated as error, so here
                 // is the only callback - resolve. Validation should be done in caller
-                promiseToReturn = new Promise(function(resolve, reject)
+                //
+                // if preparedResolve is present, that means the promise is already
+                // returned to the caller, so here we just use the old promise
+                if(typeof preparedResolve === 'function')
                 {
-                    that.callbackQueue[data.orderNumber] = resolve;
-                });
+                  that.callbackQueue[data.orderNumber] = preparedResolve;
+                }
+                else
+                {
+                  promiseToReturn = new Promise(function(resolve, reject)
+                  {
+                      that.callbackQueue[data.orderNumber] = resolve;
+                  });
+                }
             }
 
             // transferring the command data to the other side
@@ -96,7 +107,7 @@ class LocalTunnel extends AbstractTunnel
      * @param  {[type]} data [description]
      * @return {[type]}      [description]
      */
-    on(data)
+    protected async on(data)
     {
         var that = this;
         // two types : reply or new request
@@ -148,7 +159,7 @@ class LocalTunnel extends AbstractTunnel
                     if(!pipesOk) return false;
                     if(typeof returnValue[item] === 'function')
                     {
-                        returnValue = returnValue[item].apply(returnValue, data.arguments[index]);
+                        returnValue = await returnValue[item].apply(returnValue, data.arguments[index]);
                     }
                     else
                     {
