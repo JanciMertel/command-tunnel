@@ -51,19 +51,29 @@ async function testLocal()
   return await localTunnelInstance.testSync();
 }
 
+async function testRemote()
+{
+  let RemoteModuleClass = helper.getTunnel('RemoteTunnel')
+  let remoteTunnelInstance = new LocalModuleClass({address : '127.0.0.1:3444'});
+  return await localTunnelInstance.testSync();
+}
+
 async function testAll()
 {
   var tester = new Tester();
   var res = null;
 
   res = await tester.expects(testAbstract).isEqual('AbstractTunnel - overriden method')
-  tester.assertTest("testAbstract", res);
+  tester.assertTest("AbstractTest", res);
 
   res = await tester.expects(testOwned).isEqual('This method was called through OwnedTunnel after 2000ms')
   tester.assertTest("OwnedTest", res);
 
   res = await tester.expects(testLocal).isEqual('This method was called through LocalTunnel after 2000ms')
-  tester.assertTest("testLocal", res);
+  tester.assertTest("LocalTest", res);
+
+  res = await tester.expects(testLocal).isEqual('This method was called through RemoteTunnel after 2000ms')
+  tester.assertTest("RemoteTest", res);
 
   tester.results();
 }

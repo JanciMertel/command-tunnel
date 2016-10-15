@@ -1,41 +1,29 @@
 "use strict";
 
 /**
- * Local Tunnel
- * The one important difference between this tunnel and OwnedTunnel is that this one
- * is utilizing different instances instead of just one(OwnedTunnel->entity vs LocalTunnel1->LocalTunnel2)
- * Because of this, it is important to track which side is currently being used in instances(check forked flag)
- *
- * This tunnel is forking current process and loads requested module. Forking effectively creates tunnel
- * between old and forked processes.
- *
+ * Remote Tunnel
+ * Similar to LocalTunnel, but going further - for communication uses TCP connection
  * @since 0.0.1
  */
 
 import AbstractTunnel from './AbstractTunnel';
 var cp = require('child_process');
 
-class LocalTunnel extends AbstractTunnel
+class RemoteTunnel extends AbstractTunnel
 {
-    private isForked;
-    private child;
+    private isServer;
 
     constructor(tunnelConfig)
     {
         super(tunnelConfig);
 
-        this.isForked = typeof process.send === 'function';
-        if(!this.isForked)
+        if(!this.isServer)
         {
-          this.child = cp.fork(this.tunnelConfig.path);
-          this.child.on('message', this.onAbstractMessage.bind(this));
+
         }
         else
         {
-            process.on('message', this.onAbstractMessage.bind(this));
-            // tunnel is now ready on the child's side
-            this.tunnelReady = true;
-            this.command({name:'commandTunnel::tunnelReady'});
+
         }
     }
 
@@ -183,4 +171,4 @@ class LocalTunnel extends AbstractTunnel
     }
 }
 
-export default LocalTunnel;
+export default RemoteTunnel;
