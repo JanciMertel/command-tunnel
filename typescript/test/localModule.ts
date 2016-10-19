@@ -26,6 +26,6 @@ var localTunnelInstance = new LocalTunnel({ entityReference : dummyModule })
 
 setTimeout(function()
 {
-  console.log('Child process ending')
-//  process.exit()
+  console.log('LocalTunnelTest: Child process ending')
+  process.exit()
 }, 5000)

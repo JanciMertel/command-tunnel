@@ -2,29 +2,139 @@
 
 /**
  * Remote Tunnel
- * Similar to LocalTunnel, but going further - for communication uses TCP connection
+ * Similar to LocalTunnel, but going further - for communication uses TCP
+ * connection.
+ * The server side requires passed tcpServer instance - or uses provided
+ * bundled singleton.
+ * The client side requires serverAddress passed in config.
  * @since 0.0.1
  */
 
+var net = require('net');
 import AbstractTunnel from './AbstractTunnel';
-var cp = require('child_process');
+import BundledTcpServer from '../BundledTcpServer';
 
 class RemoteTunnel extends AbstractTunnel
 {
     private isServer;
+    private tcpServer;
+    private tcpClient;
+    private rawDataBuffer = '';
+    private messageDelimiter = '##';
 
     constructor(tunnelConfig)
     {
         super(tunnelConfig);
 
-        if(!this.isServer)
-        {
+        let that = this;
+        this.isServer = !tunnelConfig.serverAddress
 
+        if(this.isServer)
+        {
+          if(tunnelConfig.tcpServer)
+          {
+            this.tcpServer = tunnelConfig.tcpServer;
+          }
+          else
+          {
+            //fallback if no server has been passed - using bundled one
+            this.tcpServer = BundledTcpServer;
+            // tell server to identify and map specific client to this tunnel
+            this.tcpServer.awaitConnection(tunnelConfig.name, this);
+            if(!this.tcpServer.isListening())
+            {
+              this.tcpServer.listen(tunnelConfig.port); // server-side listening
+            }
+          }
         }
         else
         {
-
+          this.connectClient();
         }
+    }
+
+    public setAsReady() {
+      this.tunnelReady = true;
+      this.command({name:'commandTunnel::tunnelReady'});
+      this.onTunnelReady();
+    }
+
+    /**
+     * Implements simple mechanism for postponed/immediate connection establishment
+     * @return {[type]} [description]
+     */
+    private connectClient() {
+      var that = this;
+      var alreadyMapped = false;
+
+      // connect to server side
+      this.tcpClient = new net.Socket({
+        allowHalfOpen: false,
+        readable: true,
+        writable: true
+      });
+
+      var mapTcpClientEvents = function() {
+        if(alreadyMapped)
+          return false;
+        alreadyMapped = true;
+
+        that.tcpClient.on('data', that.onRawData.bind(that));
+        that.authenticate(that.tunnelConfig.name);
+      }
+      let port = this.tunnelConfig.serverAddress.split(':');
+      let host = port[0];
+      port = port[1];
+      this.tcpClient.connect(port, host, mapTcpClientEvents);
+      this.tcpClient.on('error', function(e) {
+          if (e.code == 'ECONNREFUSED') {
+              console.log("Can't connect to server. Reconnecting in 4000ms.");
+
+              setTimeout(function() {
+                  that.tcpClient.connect(port, host, mapTcpClientEvents);
+              }, 4000);
+          }
+      });
+    }
+
+    protected authenticate(authName) {
+        this.sendMessage(JSON.stringify({name: 'authentication', data: authName}))
+    }
+
+    private sendMessage(message) {
+        if(typeof message === 'object')
+          message = JSON.stringify(message);
+        this.tcpClient.write(message + this.messageDelimiter)
+    }
+
+    /**
+     * Incomming network data would arrive here, where it should be checked
+     * and in the case of indication of the message delimiter, it would be parsed
+     * as object, which could be then used as command.
+     * @param  {<Byte>Array} chunk Chunked data in base Byte format
+     */
+    protected onRawData(chunk) {
+      this.rawDataBuffer += chunk.toString('utf8')
+      if(this.rawDataBuffer.indexOf(this.messageDelimiter) !== -1)
+      {
+        let rawMessages = this.rawDataBuffer.split(this.messageDelimiter);
+        this.rawDataBuffer = rawMessages.pop();
+        for(var i in rawMessages)
+        {
+          let completeMessage = null;
+          try {
+            completeMessage = JSON.parse(rawMessages[i]);
+          }
+          catch(e)
+          {
+            // error
+          }
+          if(completeMessage)
+          {
+            this.onAbstractMessage(completeMessage);
+          }
+        }
+      }
     }
 
     /**
@@ -74,13 +184,13 @@ class RemoteTunnel extends AbstractTunnel
             }
 
             // transferring the command data to the other side
-            if(!this.isForked)
+            if(this.isServer)
             {
-                this.child.send(data);
+                this.tcpServer.sendMessage(this.tunnelConfig.name, data);
             }
             else
             {
-                process.send(data);
+                this.sendMessage(data);
             }
         }
         // always return the promise - async & await works with it - otherwise
@@ -168,6 +278,11 @@ class RemoteTunnel extends AbstractTunnel
             this.command(replyData);
             return true;
         }
+    }
+
+    public close() {
+      if(this.isServer)
+        this.tcpServer.close();
     }
 }
 

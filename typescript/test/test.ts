@@ -53,9 +53,11 @@ async function testLocal()
 
 async function testRemote()
 {
-  let RemoteModuleClass = helper.getTunnel('RemoteTunnel')
-  let remoteTunnelInstance = new LocalModuleClass({address : '127.0.0.1:3444'});
-  return await localTunnelInstance.testSync();
+  let RemoteTunnelClass = helper.getTunnel('RemoteTunnel')
+  let remoteTunnelInstance = new RemoteTunnelClass({name: 'RemoteTunnelInstance', port:3444});
+  let res = await remoteTunnelInstance.test();
+  remoteTunnelInstance.close();
+  return res;
 }
 
 async function testAll()
@@ -72,7 +74,7 @@ async function testAll()
   res = await tester.expects(testLocal).isEqual('This method was called through LocalTunnel after 2000ms')
   tester.assertTest("LocalTest", res);
 
-  res = await tester.expects(testLocal).isEqual('This method was called through RemoteTunnel after 2000ms')
+  res = await tester.expects(testRemote).isEqual('This method was called through RemoteTunnel after 2000ms')
   tester.assertTest("RemoteTest", res);
 
   tester.results();

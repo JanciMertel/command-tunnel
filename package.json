@@ -21,6 +21,7 @@
   "homepage": "https://bitbucket.org/jmertel/commandtunnel#readme",
   "dependencies": {
     "grunt-ts": "^5.1.0",
+    "net": "^1.0.2",
     "regenerator": "^0.8.41"
   },
   "devDependencies": {

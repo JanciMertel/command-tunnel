@@ -19,7 +19,7 @@ class CommandTunnelHelper {
       this.registerTunnel('AbstractTunnel', AbstractTunnel);
       this.registerTunnel('OwnedTunnel', OwnedTunnel);
       this.registerTunnel('LocalTunnel', LocalTunnel);
-      this.registerTunnel('RemoteTunnel', LocalTunnel);
+      this.registerTunnel('RemoteTunnel', RemoteTunnel);
     }
 
     registerTunnel(newTunnelName, TunnelClass)

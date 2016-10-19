@@ -112,6 +112,7 @@ class AbstractTunnel {
         this.broadcaster('Tunnel is now ready');
         this.tunnelReady = true;
         var that = this;
+
         for(let i in this.notPreparedQueue)
         {
             if(!this.notPreparedQueue.hasOwnProperty(i))
@@ -149,7 +150,7 @@ class AbstractTunnel {
         }
         else
         {
-            cli.info(this.name + ' catched unknown command: ' + JSON.stringify(data));
+            this.broadcaster(this.name + ' catched unknown command: ' + JSON.stringify(data));
         }
     }
 
