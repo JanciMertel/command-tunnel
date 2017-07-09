@@ -52,7 +52,6 @@ export function createInterface(a:Object) : any;
 /// <reference path="../typescript/test/Tester.ts" />
 /// <reference path="../typescript/test/localModule.ts" />
 /// <reference path="../typescript/test/remoteTest.ts" />
-/// <reference path="../typescript/test/remoteTestServer.ts" />
 /// <reference path="../typescript/test/test.ts" />
 /// <reference path="../typescript/tunnels/AbstractTunnel.ts" />
 /// <reference path="../typescript/tunnels/LocalTunnel.ts" />
