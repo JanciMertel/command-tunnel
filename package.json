@@ -17,9 +17,9 @@
     "communication",
     "unification"
   ],
-  "author": "jmertel",
+  "author": "JanciMertel",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/jmertel/commandtunnel#readme",
+  "homepage": "https://github.com/JanciMertel/command-tunnel.git",
   "dependencies": {
     "postinstall-build": "^5.0.1"
   },
