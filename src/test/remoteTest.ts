@@ -1,7 +1,5 @@
 "use strict";
 
-require('babel-polyfill')
-
 /**
  * Typescript-based test file with remote tunnel
  * @since 0.0.1

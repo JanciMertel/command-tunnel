@@ -142,6 +142,9 @@ class BundledTcpServer {
     }
   }
 
+  public async wdwd() {
+
+  }
   /**
    * Attempts to authenticate provided socket with provided message, hoping that
    * it will consists of identification details

@@ -1,7 +1,3 @@
-"use strict";
-
-require('babel-polyfill')
-
 /**
  * Typescript-based test file
  * @since 0.0.1
@@ -9,8 +5,8 @@ require('babel-polyfill')
 
 import CommandTunnelHelper from '../CommandTunnelHelper';
 import Tester from './Tester';
+import * as path from 'path';
 var helper = new CommandTunnelHelper()
-
 
 async function testAbstract()
 {
@@ -47,7 +43,7 @@ async function testOwned()
 async function testLocal()
 {
   let LocalModuleClass = helper.getTunnel('LocalTunnel')
-  let localTunnelInstance = new LocalModuleClass({path : './localModule.js'});
+  let localTunnelInstance = new LocalModuleClass({path : path.join(__dirname, 'localModule.js')});
   return await localTunnelInstance.testSync();
 }
 

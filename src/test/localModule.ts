@@ -1,7 +1,5 @@
 "use strict";
 
-require('babel-polyfill')
-
 import LocalTunnel from '../tunnels/LocalTunnel';
 
 // owned tunnel test

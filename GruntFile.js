@@ -1,25 +1,20 @@
 module.exports = function (grunt) {
-    var gtx = require('gruntfile-gtx').wrap(grunt);
+  "use strict";
 
-    gtx.loadAuto();
+  grunt.initConfig({
+	ts: {
+	  app: {
+		tsconfig: {
+		  "tsconfig": "./tsconfig.json",
+		  "passThrough": true
+		}
+	  }
+	}
+  });
 
-    var gruntConfig = require('./grunt');
-    gruntConfig.package = require('./package.json');
+  grunt.loadNpmTasks("grunt-ts");
 
-
-    var cssTasks = [
-    ];
-    var jsTasks = [
-        'ts:build',
-        'babel:dist'
-    ];
-
-
-    gtx.config(gruntConfig);
-
-    var build = jsTasks;
-
-    gtx.alias('build', build);
-
-    gtx.finalise();
+  grunt.registerTask("build", [
+	"ts"
+  ]);
 };
