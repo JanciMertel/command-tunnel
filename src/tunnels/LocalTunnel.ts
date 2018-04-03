@@ -13,174 +13,149 @@
  */
 
 import AbstractTunnel from './AbstractTunnel';
+
 var cp = require('child_process');
 
-class LocalTunnel extends AbstractTunnel
-{
-    private isForked;
-    private child;
+class LocalTunnel extends AbstractTunnel {
+	private isForked;
+	private child;
 
-    constructor(tunnelConfig)
-    {
-        super(tunnelConfig);
+	constructor(tunnelConfig) {
+		super(tunnelConfig);
 
-        this.isForked = typeof process.send === 'function';
-        if(!this.isForked)
-        {
-          this.child = cp.fork(this.tunnelConfig.path);
-          this.child.on('message', this.onAbstractMessage.bind(this));
-        }
-        else
-        {
-            process.on('message', this.onAbstractMessage.bind(this));
-            // tunnel is now ready on the child's side
-            this.tunnelReady = true;
-            this.command({name:'commandTunnel::tunnelReady'});
-        }
-    }
+		this.isForked = typeof process.send === 'function';
+		if (!this.isForked) {
+			this.child = cp.fork(this.tunnelConfig.path);
+			this.child.on('message', this.onAbstractMessage.bind(this));
+		}
+		else {
+			process.on('message', this.onAbstractMessage.bind(this));
+			// tunnel is now ready on the child's side
+			this.tunnelReady = true;
+			this.command({name: 'commandTunnel::tunnelReady'});
+		}
+	}
 
-    /**
-     * This method should not be called directly, instead use the original-command method
-     */
-    protected command(data, preparedResolve?)
-    {
-        let promiseToReturn;
-        let that = this;
-        if(!this.tunnelReady)
-        {
-            // if tunnel is not yet ready - store command callback so it would be executed
-            // when connected
-            promiseToReturn = new Promise(function(resolve, reject)
-            {
-                that.notPreparedQueue.push([data, resolve]);
-            });
-        }
-        else
-        {
-            // alter data, add order number for better identification
-            // but only if this is not reply message - othewise the order number
-            // should remain the same
-            // if this is reply to previous command, it isn't required to return promise
-            if(!data.isReply)
-            {
-                data.orderNumber = that.getNextOrderNumber()
+	/**
+	 * This method should not be called directly, instead use the original-command method
+	 */
+	protected command(data, preparedResolve?) {
+		let promiseToReturn;
+		let that = this;
+		if (!this.tunnelReady) {
+			// if tunnel is not yet ready - store command callback so it would be executed
+			// when connected
+			promiseToReturn = new Promise(function (resolve, reject) {
+				that.notPreparedQueue.push([data, resolve]);
+			});
+		}
+		else {
+			// alter data, add order number for better identification
+			// but only if this is not reply message - othewise the order number
+			// should remain the same
+			// if this is reply to previous command, it isn't required to return promise
+			if (!data.isReply) {
+				data.orderNumber = that.getNextOrderNumber()
 
-                // when we are talking about promises in async rpc, there is thin line
-                // between error and success... on this level we can't determine
-                // whether the result should be translated as error, so here
-                // is the only callback - resolve. Validation should be done in caller
-                //
-                // if preparedResolve is present, that means the promise is already
-                // returned to the caller, so here we just use the old promise
-                if(typeof preparedResolve === 'function')
-                {
-                  that.callbackQueue[data.orderNumber] = preparedResolve;
-                }
-                else
-                {
-                  promiseToReturn = new Promise(function(resolve, reject)
-                  {
-                      that.callbackQueue[data.orderNumber] = resolve;
-                  });
-                }
-            }
+				// when we are talking about promises in async rpc, there is thin line
+				// between error and success... on this level we can't determine
+				// whether the result should be translated as error, so here
+				// is the only callback - resolve. Validation should be done in caller
+				//
+				// if preparedResolve is present, that means the promise is already
+				// returned to the caller, so here we just use the old promise
+				if (typeof preparedResolve === 'function') {
+					that.callbackQueue[data.orderNumber] = preparedResolve;
+				}
+				else {
+					promiseToReturn = new Promise(function (resolve, reject) {
+						that.callbackQueue[data.orderNumber] = resolve;
+					});
+				}
+			}
 
-            // transferring the command data to the other side
-            if(!this.isForked)
-            {
-                this.child.send(data);
-            }
-            else
-            {
-                process.send(data);
-            }
-        }
-        // always return the promise - async & await works with it - otherwise
-        // the command call would be only asynchronous without waiting
-        return promiseToReturn;
-    }
+			// transferring the command data to the other side
+			if (!this.isForked) {
+				this.child.send(data);
+			}
+			else {
+				process.send(data);
+			}
+		}
+		// always return the promise - async & await works with it - otherwise
+		// the command call would be only asynchronous without waiting
+		return promiseToReturn;
+	}
 
-    /**
-     * Check AbstractTunnel::method.
-     *
-     * @param  {[type]} data [description]
-     * @return {[type]}      [description]
-     */
-    protected async on(data)
-    {
-        var that = this;
-        // two types : reply or new request
-        if(data.isReply)
-        {
-            // if reply => Received reply from the other side
-            // just do basic check and if everything is ok, call stored callback(saved under orderNumber when command was issued)
-            // this callback accepts parameter - the callback is in fact resolve parameter of Promise callback
-            // meaning that anything that is passed into the callback below IS RETURNED IN PROMISE CALLBACK
-            // (whether in .then() or in await-async construct)
-            // callback should be stored - only if this call is reply to previous command
-            if(data.orderNumber && this.callbackQueue[data.orderNumber])
-            {
-                // assuming that required data are data.data...otherwise
-                // the async called above should receive undefined, which is still fine
-                this.callbackQueue[data.orderNumber](data.data);
-            }
-            else
-            {
-                // ignore if callback does not exist
-                // shouldn't happen, but if does, then we cannot say for sure which
-                // resolve callback should be called - pairing failed...at least notify
-                this.broadcaster('Cannot find command callback base on order number. Ignoring.');
-            }
-            // return is not requireds
-        }
-        else
-        {
-            // if not reply => new command
-            let returnValue;
-            // first - check if this callback is registered - if so, then dont check callbackQueue, run just the registeredAction callback
-            if(this.registeredActions[data.name])
-            {
-                // there can be more registered  callbacks - use iterator and call each callback
-                // TODO - right now only the last callback yields return data (simple overwrite)
-                for(let i in this.registeredActions[data.name])
-                {
-                    returnValue = this.registeredActions[data.name][i].call(that, data);
-                }
-            }
-            else
-            {
-                var pipes = data.name.split('.');
-                var pipesOk = true;
-                returnValue = this.entity; // replacement for actual object
-                for(let index in pipes)
-                {
-                    let item = pipes[index];
-                    if(!pipesOk) return false;
-                    if(typeof returnValue[item] === 'function')
-                    {
-                        returnValue = await returnValue[item].apply(returnValue, data.arguments[index]);
-                    }
-                    else
-                    {
-                        pipesOk = false;
-                    }
-                }
+	/**
+	 * Check AbstractTunnel::method.
+	 *
+	 * @param  {[type]} data [description]
+	 * @return {[type]}      [description]
+	 */
+	protected async on(data) {
+		var that = this;
+		// two types : reply or new request
+		if (data.isReply) {
+			// if reply => Received reply from the other side
+			// just do basic check and if everything is ok, call stored callback(saved under orderNumber when command was issued)
+			// this callback accepts parameter - the callback is in fact resolve parameter of Promise callback
+			// meaning that anything that is passed into the callback below IS RETURNED IN PROMISE CALLBACK
+			// (whether in .then() or in await-async construct)
+			// callback should be stored - only if this call is reply to previous command
+			if (data.orderNumber && this.callbackQueue[data.orderNumber]) {
+				// assuming that required data are data.data...otherwise
+				// the async called above should receive undefined, which is still fine
+				this.callbackQueue[data.orderNumber](data.data);
+			}
+			else {
+				// ignore if callback does not exist
+				// shouldn't happen, but if does, then we cannot say for sure which
+				// resolve callback should be called - pairing failed...at least notify
+				this.broadcaster('Cannot find command callback base on order number. Ignoring.');
+			}
+			// return is not requireds
+		}
+		else {
+			// if not reply => new command
+			let returnValue;
+			// first - check if this callback is registered - if so, then dont check callbackQueue, run just the registeredAction callback
+			if (this.registeredActions[data.name]) {
+				// there can be more registered  callbacks - use iterator and call each callback
+				// TODO - right now only the last callback yields return data (simple overwrite)
+				for (let i in this.registeredActions[data.name]) {
+					returnValue = this.registeredActions[data.name][i].call(that, data);
+				}
+			}
+			else {
+				var pipes = data.name.split('.');
+				var pipesOk = true;
+				returnValue = this.entity; // replacement for actual object
+				for (let index in pipes) {
+					let item = pipes[index];
+					if (!pipesOk) return false;
+					if (typeof returnValue[item] === 'function') {
+						returnValue = await returnValue[item].apply(returnValue, data.arguments[index]);
+					}
+					else {
+						pipesOk = false;
+					}
+				}
 
-                if(!pipesOk)
-                {
-                    return false;
-                }
-            }
-            var replyData = {
-                name : data.name,
-                isReply : true,
-                data : returnValue,
-                orderNumber : data.orderNumber
-            };
-            this.command(replyData);
-            return true;
-        }
-    }
+				if (!pipesOk) {
+					return false;
+				}
+			}
+			var replyData = {
+				name: data.name,
+				isReply: true,
+				data: returnValue,
+				orderNumber: data.orderNumber
+			};
+			this.command(replyData);
+			return true;
+		}
+	}
 }
 
 export default LocalTunnel;

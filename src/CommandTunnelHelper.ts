@@ -12,25 +12,22 @@ import RemoteTunnel from './tunnels/RemoteTunnel'
  */
 class CommandTunnelHelper {
 
-    protected registeredTunnels : any = {};
+	protected registeredTunnels: any = {};
 
-    constructor()
-    {
-      this.registerTunnel('AbstractTunnel', AbstractTunnel);
-      this.registerTunnel('OwnedTunnel', OwnedTunnel);
-      this.registerTunnel('LocalTunnel', LocalTunnel);
-      this.registerTunnel('RemoteTunnel', RemoteTunnel);
-    }
+	constructor() {
+		this.registerTunnel('AbstractTunnel', AbstractTunnel);
+		this.registerTunnel('OwnedTunnel', OwnedTunnel);
+		this.registerTunnel('LocalTunnel', LocalTunnel);
+		this.registerTunnel('RemoteTunnel', RemoteTunnel);
+	}
 
-    registerTunnel(newTunnelName, TunnelClass)
-    {
-      this.registeredTunnels[newTunnelName] = TunnelClass;
-    }
+	registerTunnel(newTunnelName, TunnelClass) {
+		this.registeredTunnels[newTunnelName] = TunnelClass;
+	}
 
-    getTunnel(tunnelName)
-    {
-      return this.registeredTunnels[tunnelName];
-    }
+	getTunnel(tunnelName) {
+		return this.registeredTunnels[tunnelName];
+	}
 }
 
 export default CommandTunnelHelper;
