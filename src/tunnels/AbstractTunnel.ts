@@ -1,7 +1,8 @@
 "use strict";
+import ITunnel from "./ITunnel";
 
 /**
- * Command tunnel for transparent approach to communication between nodes - remote or local
+ * Command tunnel for transparent approach to communication between nodes
  * Could be extended or just embedded as variable
  *
  * Abstracrt tunnel represents interface - required methods to be implemented in each tunnel:
@@ -11,45 +12,44 @@
  *
  * @since 0.0.1
  */
-class AbstractTunnel {
+class AbstractTunnel implements ITunnel {
 
-	protected name; // alised name - direct identification on current side of tunnel
-	protected entity; // simplified: for owned its object with callable methods, for remote / local it is connection
+	protected name; // aliased name - direct identification on current side of tunnel
+	protected entity; // wrapped instance of whatever
 	protected tunnelConfig: any;
-	protected registeredActions;  // aliased actions -- could be stored under custom name
-	protected orderNumber: number; // keeping eyes on command numbers aka ids
-	protected callbackQueue;
-	protected remoteCallbackQueue;
-	protected notPreparedQueue;
-	protected tunnelReady;
-	protected broadcaster: any = console.log;
+	protected registeredActions: { [key: string]: Function[] } = {};  // aliased actions -- could be stored under custom name
+	protected orderNumber: number = 0; // keeping eye on command numbers aka ids
+	protected callbackQueue: { [key: number]: any } = {};
+	protected notPreparedQueue: any[] = []; // array of commands
+	protected tunnelReady: boolean = false;
+	protected logger: any = console.log;
 
-	constructor(tunnelConfig) {
+	constructor(entity: any, tunnelConfig) {
 		this.name = 'AbstractTunnel instance';
-		this.registeredActions = {};
-		this.callbackQueue = {};
-		this.remoteCallbackQueue = {};
-		this.orderNumber = 0;
-		this.tunnelReady = false;
-		this.notPreparedQueue = [];
 		this.tunnelConfig = tunnelConfig;
 		// owned tunnel is using direct reference + todo add checking
-		this.entity = tunnelConfig.entityReference;
+		this.entity = entity;
 
 		// create default actions
 		this.registerAction('commandTunnel::tunnelReady', this.onTunnelReady); // should fire any preregistered commands
 
 		// wrap this side of the tunnel in Proxy so non existing calls could be transformed into commands
-		var that = this;
+		return this.getProxy();
+	}
+
+	protected getProxy(): any {
+		const that = this;
 		return new Proxy(this, {
 			get: function (rcvr, name) {
+				console.log(name);
 				if (name === '__noSuchMethod__') {
 					console.log('Command called through proxy, but method named  is not defined. Ignoring.');
 				} else {
-					if (typeof that[name] !== 'undefined') {
-						return that[name]
-					}
-					else {
+					if (typeof rcvr[name] !== 'undefined') {
+						return rcvr[name]
+					} else if (typeof name === 'symbol' || name === 'inspect') {
+						return;
+					} else {
 						return function () {
 							var args = Array.prototype.slice.call(arguments);
 							return that.__noSuchMethod__(name, args);
@@ -57,29 +57,11 @@ class AbstractTunnel {
 					}
 				}
 			}
-		})
+		});
 	}
 
-	/*
-	 * Proxy based __noSuchMethod__ hook
-	 */
-	__noSuchMethod__(name, args) {
-		if (typeof args[0] !== 'object' || typeof args[0].length === 'undefined') {
-			args = [args];
-		}
-		return this.command({name: name, arguments: args});
-	}
-
-	getEntity() {
+	public getEntity(): any {
 		return this.entity;
-	}
-
-	/**
-	 * Just increments the counter and returns actual number
-	 * @return {[type]} [description]
-	 */
-	getNextOrderNumber() {
-		return ++this.orderNumber
 	}
 
 	/**
@@ -88,7 +70,7 @@ class AbstractTunnel {
 	 * @param  {Function} callback [description]
 	 * @return {[type]}            [description]
 	 */
-	registerAction(name, callback) {
+	public registerAction(name, callback) {
 		if (!this.registeredActions[name]) {
 			this.registeredActions[name] = [];
 		}
@@ -96,10 +78,18 @@ class AbstractTunnel {
 	}
 
 	/**
+	 * Just increments the counter and returns actual number
+	 * @return {[type]} [description]
+	 */
+	protected getNextOrderNumber() {
+		return ++this.orderNumber
+	}
+
+	/**
 	 * Both sides are now listening
 	 */
 	protected onTunnelReady() {
-		this.broadcaster('Tunnel is now ready');
+		this.logger('Tunnel is now ready');
 		this.tunnelReady = true;
 		var that = this;
 
@@ -112,7 +102,32 @@ class AbstractTunnel {
 			that.command.apply(that, item);
 		}
 		this.notPreparedQueue = [];
+	}
 
+	/*
+	 * Proxy based __noSuchMethod__ hook
+	 */
+	private __noSuchMethod__(name, args) {
+		if (typeof args[0] !== 'object' || typeof args[0].length === 'undefined') {
+			args = [args];
+		}
+		console.log('in command', name, this.command)
+		return this.command({name: name, arguments: args});
+	}
+
+	/*
+ * Just a checker method before the actual 'on' call - here should be places various checkings as
+ * the argument is just an object transferred through the tunnel.
+ */
+	protected onAbstractMessage(data) {
+		// space for extending... right now it just checks whether the identification
+		// of event is present
+		if (data.name) {
+			this.on(data);
+		}
+		else {
+			this.logger(this.name + ' catched unknown command: ' + JSON.stringify(data));
+		}
 	}
 
 	/**
@@ -122,22 +137,8 @@ class AbstractTunnel {
 	 */
 	protected command(data) {
 		// extend this!!
-		this.broadcaster(this.name + ' does not have extended method "command"!');
-	}
-
-	/*
-	 * Just a checker method before the actual 'on' call - here should be places various checkings as
-	 * the argument is just an object transferred through the tunnel.
-	 */
-	protected onAbstractMessage(data) {
-		// space for extending... right now it just checks whether the identification
-		// of event is present
-		if (data.name) {
-			this.on(data);
-		}
-		else {
-			this.broadcaster(this.name + ' catched unknown command: ' + JSON.stringify(data));
-		}
+		console.log(this.logger, this.name)
+		this.logger(this.name + ' does not have extended method "command"!');
 	}
 
 	/**
@@ -147,15 +148,7 @@ class AbstractTunnel {
 	 */
 	protected async on(data) {
 		// extend this!!
-		return await this.broadcaster(this.name + ' does not have extended method "on"!');
-	}
-
-	/**
-	 * Latter implementations should add various method for checking, like remote polling
-	 * @return {bool} whether is ready or not, should be async
-	 */
-	public async checkReadyState() {
-		return this.tunnelReady;
+		return await this.logger(this.name + ' does not have extended method "on"!');
 	}
 }
 

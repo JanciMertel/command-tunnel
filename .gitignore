@@ -1,5 +1,3 @@
-build/
+.idea/
 node_modules/
-dist/
-.idea
-.tscache
+build/

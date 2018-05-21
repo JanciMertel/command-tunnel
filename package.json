@@ -2,9 +2,10 @@
   "name": "command-tunnel",
   "version": "0.0.3",
   "description": "Lib for mixing sync & async calls while utilizing command-like envelopes for communication between local/remote instances",
-  "main": "index.js",
+  "main": "build/index.js",
+  "types": "src/index.ts",
   "scripts": {
-    "build": "grunt build --verbose",
+    "build": "tsc -p tsconfig.json",
     "postinstall": "postinstall-build dist --script build"
   },
   "repository": {
@@ -21,13 +22,14 @@
   "license": "ISC",
   "homepage": "https://github.com/JanciMertel/command-tunnel.git",
   "dependencies": {
+    "deepstream.io": "^3.1.1",
     "postinstall-build": "^5.0.1"
   },
   "devDependencies": {
-    "@types/mocha": "^2.2.41",
-    "@types/node": "^8.0.9",
-    "grunt": "^1.0.1",
-    "grunt-ts": "^6.0.0-beta.16",
-    "typescript": "^2.0.8"
+    "@types/node": "^9.6.2",
+    "ts-loader": "^3.1.1",
+    "tslint": "^5.8.0",
+    "tslint-microsoft-contrib": "^5.0.1",
+    "typescript": "^2.6.1"
   }
 }
